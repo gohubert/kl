@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>即時雲端相簿</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* 隱藏原生捲軸但保留滾動 */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-rose-500 selection:text-white">
+
+  <!-- 頂部導航欄 -->
+  <header class="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-4 sm:px-8 py-3 flex items-center justify-between transition-all">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center shadow-lg shadow-rose-500/20">
+        <i data-lucide="image" class="w-5 h-5 text-white"></i>
+      </div>
+      <div>
+        <h1 id="header-album-title" class="font-bold text-lg text-white leading-tight flex items-center gap-2">
+          載入相簿中...
+        </h1>
+        <p class="text-xs text-slate-400">珍惜每刻美好回憶</p>
+      </div>
+    </div>
+
+    <!-- 右側工具區：BGM 控制與管理登入 -->
+    <div class="flex items-center gap-3">
+      <!-- BGM 按鈕 -->
+      <button id="bgm-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-xs font-medium text-slate-200 transition-all shadow-sm">
+        <i data-lucide="disc" id="bgm-icon" class="w-4 h-4 text-rose-400"></i>
+        <span id="bgm-label">BGM: 點擊播放</span>
+      </button>
+
+      <!-- 管理者登入/登出按鈕 -->
+      <button id="auth-btn" class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-xs font-semibold text-white shadow-md shadow-rose-600/20 transition-all">
+        <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+        <span id="auth-btn-label">管理員登入</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- 隱藏音訊播放器 -->
+  <audio id="audio-player" loop preload="auto"></audio>
+
+  <!-- 主內容容器 -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+
+    <!-- 橫幅 Hero 區域 -->
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/60 to-slate-950 border border-slate-800/80 p-6 sm:p-10 shadow-2xl">
+      <div class="absolute -right-20 -top-20 w-80 h-80 bg-rose-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="relative z-10 max-w-2xl space-y-3">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          Cloud Firestore 即時串流
+        </span>
+        <h2 id="hero-album-title" class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+          相簿載入中...
+        </h2>
+        <p class="text-sm sm:text-base text-slate-300">
+          記錄每一刻的珍貴時光。歡迎觀賞、留言與分享溫暖互動。
+        </p>
+
+        <!-- 統計數據 -->
+        <div class="flex items-center gap-6 pt-2 text-xs sm:text-sm text-slate-400">
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="images" class="w-4 h-4 text-rose-400"></i>
+            <span id="stat-photos">0 張回憶</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="heart" class="w-4 h-4 text-pink-400"></i>
+            <span id="stat-likes">0 個喜歡</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="message-circle" class="w-4 h-4 text-sky-400"></i>
+            <span id="stat-comments">0 則留言</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 管理控制台 Panel (管理者驗證成功後顯示) -->
+    <section id="admin-panel" class="hidden rounded-2xl bg-slate-900/90 border border-rose-500/30 p-6 space-y-6 shadow-xl">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <div class="flex items-center gap-2">
+          <div class="p-2 rounded-lg bg-rose-500/10 text-rose-400">
+            <i data-lucide="settings" class="w-5 h-5"></i>
+          </div>
+          <h3 class="text-lg font-bold text-white">相簿管理員控制中心</h3>
+        </div>
+        <span class="text-xs px-2.5 py-1 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">已解鎖編輯權限</span>
+      </div>
+
+      <!-- 相簿基本設定 -->
+      <form id="album-settings-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">相簿自訂名稱</label>
+          <input type="text" id="input-album-title" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-rose-500 transition" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">背景音樂 URL (MP3 連結)</label>
+          <input type="url" id="input-bgm-url" placeholder="https://.../music.mp3" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none
